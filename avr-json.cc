@@ -7,11 +7,11 @@ Change Log
 */
 
 #include <ArduinoJson.h>
-#define SLEEP 5000
+#define SLEEP 1000
 // Create 200B buffer for json object
-StaticJsonBuffer<200> jsonBuffer;
+
 // Create json object
-JsonObject& json_out = jsonBuffer.createObject();
+// JsonObject& json_out = jsonBuffer.createObject();
 
 char SerialBuffer[200];
 
@@ -21,7 +21,7 @@ void setup() {
 		//Wait for serial port to initialize
 	}
 	// Reserve memory for json buffer
-	json_out["node"] = "1";
+	// json_out["node"] = "1";
 }
 
 void loop() {
@@ -47,6 +47,7 @@ void loop() {
 		Serial.println(SerialBuffer);
 		Serial.println();
 		//char parse[] = "{\"node\":\"1\",\"millis\":55000}";
+		StaticJsonBuffer<200> jsonBuffer;
 		JsonObject& json_in = jsonBuffer.parseObject(SerialBuffer);
 		//Serial.println(parse);
 		
@@ -58,21 +59,23 @@ void loop() {
 		Serial.println( "Got Data" );
 		
 		int node = json_in["node"];
-		long mill = json_in["millis"];
+		long type = json_in["type"];
 		Serial.print("Node: ");
 		Serial.println(node);
-		Serial.print("Seconds: ");
-		Serial.println(mill);
+		Serial.print("Type: ");
+		Serial.println(type);
+		Serial.flush();
 	} else {
-		// Send normal output 
-		if ( millis() % SLEEP == 0  && ! MsgSent ) {
-			json_out["millis"] = millis();
-			json_out.printTo(Serial);
-			Serial.println();
-			delay(1);
-			MsgSent = true;
-		} else {
-			MsgSent = false;
-		}
+		// Send normal tput 
+		// if ( millis() % SLEEP == 0  && ! MsgSent ) {
+		// 	json_out["millis"] = millis();
+		// 	json_out.printTo(Serial);
+		// 	Serial.println();
+		// 	delay(1);
+		// 	MsgSent = true;
+		// } else {
+		// 	MsgSent = false;
+		// }
+		delay(10);
 	}	
 }
