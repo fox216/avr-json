@@ -29,11 +29,40 @@ void loop() {
 	// Test if serial buffer has input
 	if ( Serial.available() > 0 ) {
 		// Read incomnig byte until a trailing '}' character is detected.
-		Serial.readBytesUntil('}', SerialBuffer, 199);
-		// Parse character buffer from serial port as json
-		JsonObject& json_in = jsonBuffer.parseObject(SerialBuffer);
+		//delay(20);
+		Serial.readBytesUntil('\n', SerialBuffer, 199);
 		
-
+		// NOTE: Alternate method for reading serial port if memory is constrained
+		// int count=0;
+		// // read until the serial buffer is empty
+		// while (Serial.available() > 0) {
+		// 	SerialBuffer[count] = (char)Serial.read();
+		// 	count++;
+		// }
+		
+		// NOTE: Test most contain single quotes when issued from command line
+		// Test Msg: echo '{"node":"1","millis":55000}' > /dev/ttyLPL
+		// Parse character buffer from serial port as json
+		Serial.println("Buffer -> ");
+		Serial.println(SerialBuffer);
+		Serial.println();
+		//char parse[] = "{\"node\":\"1\",\"millis\":55000}";
+		JsonObject& json_in = jsonBuffer.parseObject(SerialBuffer);
+		//Serial.println(parse);
+		
+		//JsonObject& json_in = jsonBuffer.parseObject(parse);
+		if (!json_in.success()) {
+    		Serial.println("parseObject() failed");
+    		return;
+  		}
+		Serial.println( "Got Data" );
+		
+		int node = json_in["node"];
+		long mill = json_in["millis"];
+		Serial.print("Node: ");
+		Serial.println(node);
+		Serial.print("Seconds: ");
+		Serial.println(mill);
 	} else {
 		// Send normal output 
 		if ( millis() % SLEEP == 0  && ! MsgSent ) {
