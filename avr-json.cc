@@ -133,83 +133,162 @@ void loop() {
 				Serial.print("BufferPosition: ");
 				Serial.println(bufferPosition);
 				Serial.println(payloadBuffer[bufferPosition], HEX);
-				switch ( (char)msg.DataMap[x] ) {
-					case 'b':
+				char thisDataMap = msg.DataMap[x];
 
-						//byte temp = (byte)msg.DataMap[x];
-						data.add((byte)payloadBuffer[bufferPosition]);
-						//json_out["byte"] = (byte)payloadBuffer[bufferPosition];
-						
-						// Serial.print("Byte -> ");
-						// Serial.println(payloadBuffer[bufferPosition]);
-						bufferPosition += 1;
-					break;
-					case 'L':
-						// Long Datatype (Size 4)
-						Serial.print("Unsigned Long -> ");
-						// byte LongData[4];
+				if (thisDataMap == 'b') {
+					data.add((byte)payloadBuffer[bufferPosition]);
+					bufferPosition += 1;
+				}
+				else if (thisDataMap == 'f' or thisDataMap == 'L' or thisDataMap == 'l' or thisDataMap == 'd') {
+					byte fourByte[4];
+					memcpy(fourByte, &payloadBuffer[bufferPosition], 4);
 
-						// // memcpy(unsigned long LargeBuffer, &payloadBuffer[bufferPosition], 4);
-						// // memcpy(LongData, &payloadBuffer[bufferPosition], 4);
-						// Serial.println(sampleData.uL1, HEX);
-						// // Serial.println((unsigned long)LongData, HEX);
-
-
-						// // data.add((unsigned long)LargeBuffer);
-						// // data.add((long)LongData);
-						// //Serial.println(payloadBuffer[bufferPosition]);
-						
-
-						byte LargeBuffer[4];
-						Serial.println("Raw Buffer...");
-						for (int x =0 ; x <= 3; x++) {
-							//Serial.println(payloadBuffer[bufferPosition + x], HEX);
-							LargeBuffer[x] = payloadBuffer[bufferPosition + x];
-							//bufferPosition++;
-
-						}
-						unsigned long adc_value =0;
-						adc_value = * (unsigned long *) LargeBuffer;
-
-						// unsigned long adc_value =0;
-						// adc_value += (unsigned long)payloadBuffer[bufferPosition] << 24;
-						// adc_value += (unsigned long)payloadBuffer[bufferPosition +1] << 16;
-						// adc_value += (unsigned long)payloadBuffer[bufferPosition +2] << 8;
-						// adc_value += (unsigned long)payloadBuffer[bufferPosition +3];
-						//int position = 0;
-
-
-
-
-						//for (int x = 3; x >= 0; x--) {
-						// 	Serial.println(payloadBuffer[bufferPosition + x], HEX);
-
-						// 	LargeBuffer[position] = payloadBuffer[bufferPosition + x];
-						// 	position++;
-
-						// }
-						// unsigned long longData;
-						// longData = (unsigned long)LargeBuffer;
-						// Serial.println(longData, HEX);
-
-						// http://forum.arduino.cc/index.php?topic=71030.0
-						// long adc_value =0;
-						// adc_value += payloadBuffer[bufferPosition] << 24;
-						// adc_value += payloadBuffer[bufferPosition +1 ] << 16;
-						// adc_value += payloadBuffer[bufferPosition +2] << 8;
-						// adc_value += payloadBuffer[bufferPosition +3];
-						// adc_value = *((long*)d);
-
-
-
-						data.add(adc_value);
-					break;
-					//default:
-						// Serial.print("Undefined: ");
-						// Serial.println(msg.DataMap[x]);
-					//break;
+					if (thisDataMap == 'f') {
+						float castFloat;
+						castFloat = * (float *) fourByte;
+						data.add(castFloat);
+					}
+					if (thisDataMap == 'L') {
+						unsigned long castUlong;
+						castUlong = * (unsigned long *) fourByte;
+						data.add(castUlong);
+					}
+					if (thisDataMap == 'l') {
+						long castLong;
+						castLong = * (long *) fourByte;
+						data.add(castLong);
+					}
+					if (thisDataMap == 'd') {
+						double castDouble;
+						castDouble = * (double *) fourByte;
+						data.add(castDouble);
+					}
+					bufferPosition += 4;
 
 				}
+				else if (thisDataMap == 'i' or thisDataMap == 'I' or thisDataMap == 'w') {
+					byte twoByte[2];
+					memcpy(twoByte, &payloadBuffer[bufferPosition], 2);
+
+					if (thisDataMap == 'i') {
+						int castInt;
+						castInt = * (int *) twoByte;
+						data.add(castInt);
+					}
+					if (thisDataMap == 'I') {
+						unsigned int castUint;
+						castUint = * (unsigned int *) twoByte;
+						data.add(castUint);
+					}
+					if (thisDataMap == 'w') {
+						word castWord;
+						castWord = * (word *) twoByte;
+						data.add(castWord);
+					}
+
+					bufferPosition += 2;
+				} else {
+					Serial.print("Undefined: ");
+					Serial.println(msg.DataMap[x]);
+				}	
+				//if ( (char)msg.DataMap[x])
+
+
+
+				// switch ( (char)msg.DataMap[x] ) {
+				// 	case 'b':
+
+				// 		//byte temp = (byte)msg.DataMap[x];
+				// 		data.add((byte)payloadBuffer[bufferPosition]);
+				// 		//json_out["byte"] = (byte)payloadBuffer[bufferPosition];
+						
+				// 		// Serial.print("Byte -> ");
+				// 		// Serial.println(payloadBuffer[bufferPosition]);
+				// 		bufferPosition += 1;
+				// 	break;
+				// 	// case 'f':
+				// 	// 	// Long Datatype (Size 4)
+				// 	// 	Serial.print("float -> ");
+				// 	// 	float f_value = 0;
+				// 	// 	// byte LongData[4];
+				// 	// 	byte floatBuffer[4];
+				// 	// 	memcpy(floatBuffer, &payloadBuffer[bufferPosition], 4);
+						
+
+				// 	// 	//float float_value = * (float *) floatBuffer;
+				// 	// 	//bufferPosition += 4;
+				// 	// 	data.add(f_value);
+
+				// 	// break;
+				// 	case 'L':
+				// 		// Long Datatype (Size 4)
+				// 		Serial.print("Unsigned Long -> ");
+				// 		// byte LongData[4];
+
+				// 		// // memcpy(unsigned long LargeBuffer, &payloadBuffer[bufferPosition], 4);
+				// 		// // memcpy(LongData, &payloadBuffer[bufferPosition], 4);
+				// 		// Serial.println(sampleData.uL1, HEX);
+				// 		// // Serial.println((unsigned long)LongData, HEX);
+
+
+				// 		// // data.add((unsigned long)LargeBuffer);
+				// 		// // data.add((long)LongData);
+				// 		// //Serial.println(payloadBuffer[bufferPosition]);
+						
+
+				// 		byte LargeBuffer[4];
+				// 		Serial.println("Raw Buffer...");
+				// 		// for (int x =0 ; x <= 3; x++) {
+				// 		// 	//Serial.println(payloadBuffer[bufferPosition + x], HEX);
+				// 		// 	LargeBuffer[x] = payloadBuffer[bufferPosition + x];
+				// 		// 	//bufferPosition++;
+
+				// 		// }
+				// 		memcpy(LargeBuffer, &payloadBuffer[bufferPosition], 4);
+				// 		bufferPosition += 4;
+
+				// 		unsigned long adc_value = 0;
+				// 		adc_value = * (unsigned long *) LargeBuffer;
+
+				// 		// unsigned long adc_value =0;
+				// 		// adc_value += (unsigned long)payloadBuffer[bufferPosition] << 24;
+				// 		// adc_value += (unsigned long)payloadBuffer[bufferPosition +1] << 16;
+				// 		// adc_value += (unsigned long)payloadBuffer[bufferPosition +2] << 8;
+				// 		// adc_value += (unsigned long)payloadBuffer[bufferPosition +3];
+				// 		//int position = 0;
+
+
+
+
+				// 		//for (int x = 3; x >= 0; x--) {
+				// 		// 	Serial.println(payloadBuffer[bufferPosition + x], HEX);
+
+				// 		// 	LargeBuffer[position] = payloadBuffer[bufferPosition + x];
+				// 		// 	position++;
+
+				// 		// }
+				// 		// unsigned long longData;
+				// 		// longData = (unsigned long)LargeBuffer;
+				// 		// Serial.println(longData, HEX);
+
+				// 		// http://forum.arduino.cc/index.php?topic=71030.0
+				// 		// long adc_value =0;
+				// 		// adc_value += payloadBuffer[bufferPosition] << 24;
+				// 		// adc_value += payloadBuffer[bufferPosition +1 ] << 16;
+				// 		// adc_value += payloadBuffer[bufferPosition +2] << 8;
+				// 		// adc_value += payloadBuffer[bufferPosition +3];
+				// 		// adc_value = *((long*)d);
+
+
+
+				// 		data.add(adc_value);
+				// 	break;
+				// 	default:
+				// 		Serial.print("Undefined: ");
+				// 		Serial.println(msg.DataMap[x]);
+				// 	break;
+
+				// }
 
 
 			}
