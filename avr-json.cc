@@ -9,11 +9,32 @@ Change Log
 #include <ArduinoJson.h>
 #define SLEEP 1000
 // Create 200B buffer for json object
-
 // Create json object
-// JsonObject& json_out = jsonBuffer.createObject();
 
 char SerialBuffer[200];
+#define MAX_NETWORK_SIZE 50
+
+typedef struct {
+  byte 				NodeID; 		// Address of target sensor 
+  byte 				Method; 		// Message method (Example: Get / Set)
+  byte				TypeID; 		// Sensor or system data type
+  const char*		DataMap;		// Character Map used to decode data 
+  byte 				MsgSize;		// Length message payload
+  byte  			MsgPayload[MAX_NETWORK_SIZE];
+} _Msg;
+_Msg msg;	// serial Message
+
+typedef struct {
+	byte 	b1;
+	byte 	b2;
+	unsigned long 	uL1;
+	float 			f1;
+	int 			i1;
+	unsigned int 	uI1;
+} _SampleSensorData;
+_SampleSensorData sampleData;
+byte decodeBuffer[4]; // max size for int / long 
+byte payloadBuffer[MAX_NETWORK_SIZE];
 
 void setup() {
 	Serial.begin(115200);
@@ -21,7 +42,7 @@ void setup() {
 		//Wait for serial port to initialize
 	}
 	// Reserve memory for json buffer
-	// json_out["node"] = "1";
+	
 }
 
 void loop() {
@@ -66,16 +87,142 @@ void loop() {
 		Serial.println(type);
 		Serial.flush();
 	} else {
-		// Send normal tput 
-		// if ( millis() % SLEEP == 0  && ! MsgSent ) {
-		// 	json_out["millis"] = millis();
-		// 	json_out.printTo(Serial);
-		// 	Serial.println();
-		// 	delay(1);
-		// 	MsgSent = true;
-		// } else {
-		// 	MsgSent = false;
-		// }
-		delay(10);
+		// Send normal output 
+		if ( millis() % SLEEP == 0  && ! MsgSent ) {
+			StaticJsonBuffer<200> jsonBuffer;
+
+			JsonObject& json_out = jsonBuffer.createObject();
+
+
+			msg.NodeID = 123;
+			msg.Method = 2;
+			msg.TypeID = 200;
+			msg.DataMap = "bbLfiI"; // Byte, Byte, Unsigned Long, float, integer, Unsigned Integer
+
+			json_out["node"] = msg.NodeID;
+			json_out["meth"] = msg.Method;
+			json_out["type"] = msg.TypeID;
+			json_out["map"] = msg.DataMap;
+
+			sampleData.b1 = 42;
+			sampleData.b2 = 43;
+			sampleData.uL1 = 999999;
+			sampleData.f1 = 175.06;
+			sampleData.i1 = -678;
+			sampleData.uI1 = millis();
+
+			msg.MsgSize = sizeof(sampleData);
+			Serial.print("Message Size: ");
+			Serial.println(msg.MsgSize);
+
+			memcpy(payloadBuffer, &sampleData, (int)msg.MsgSize);
+			Serial.print("Data Map Size: ");
+			Serial.println( strlen(msg.DataMap) );
+
+			Serial.print("Data Map Value: ");
+			Serial.println( msg.DataMap );
+			int bufferPosition = 0;
+
+			JsonArray& data = json_out.createNestedArray("data");
+			for (int x = 0; x < strlen(msg.DataMap); x++) {
+				Serial.print("DataMap[");
+				Serial.print(x);
+				Serial.print("]: ");
+				Serial.println(msg.DataMap[x]);
+
+				Serial.print("BufferPosition: ");
+				Serial.println(bufferPosition);
+				Serial.println(payloadBuffer[bufferPosition], HEX);
+				switch ( (char)msg.DataMap[x] ) {
+					case 'b':
+
+						//byte temp = (byte)msg.DataMap[x];
+						data.add((byte)payloadBuffer[bufferPosition]);
+						//json_out["byte"] = (byte)payloadBuffer[bufferPosition];
+						
+						// Serial.print("Byte -> ");
+						// Serial.println(payloadBuffer[bufferPosition]);
+						bufferPosition += 1;
+					break;
+					case 'L':
+						// Long Datatype (Size 4)
+						Serial.print("Unsigned Long -> ");
+						// byte LongData[4];
+
+						// // memcpy(unsigned long LargeBuffer, &payloadBuffer[bufferPosition], 4);
+						// // memcpy(LongData, &payloadBuffer[bufferPosition], 4);
+						// Serial.println(sampleData.uL1, HEX);
+						// // Serial.println((unsigned long)LongData, HEX);
+
+
+						// // data.add((unsigned long)LargeBuffer);
+						// // data.add((long)LongData);
+						// //Serial.println(payloadBuffer[bufferPosition]);
+						
+
+						byte LargeBuffer[4];
+						Serial.println("Raw Buffer...");
+						for (int x =0 ; x <= 3; x++) {
+							//Serial.println(payloadBuffer[bufferPosition + x], HEX);
+							LargeBuffer[x] = payloadBuffer[bufferPosition + x];
+							//bufferPosition++;
+
+						}
+						unsigned long adc_value =0;
+						adc_value = * (unsigned long *) LargeBuffer;
+
+						// unsigned long adc_value =0;
+						// adc_value += (unsigned long)payloadBuffer[bufferPosition] << 24;
+						// adc_value += (unsigned long)payloadBuffer[bufferPosition +1] << 16;
+						// adc_value += (unsigned long)payloadBuffer[bufferPosition +2] << 8;
+						// adc_value += (unsigned long)payloadBuffer[bufferPosition +3];
+						//int position = 0;
+
+
+
+
+						//for (int x = 3; x >= 0; x--) {
+						// 	Serial.println(payloadBuffer[bufferPosition + x], HEX);
+
+						// 	LargeBuffer[position] = payloadBuffer[bufferPosition + x];
+						// 	position++;
+
+						// }
+						// unsigned long longData;
+						// longData = (unsigned long)LargeBuffer;
+						// Serial.println(longData, HEX);
+
+						// http://forum.arduino.cc/index.php?topic=71030.0
+						// long adc_value =0;
+						// adc_value += payloadBuffer[bufferPosition] << 24;
+						// adc_value += payloadBuffer[bufferPosition +1 ] << 16;
+						// adc_value += payloadBuffer[bufferPosition +2] << 8;
+						// adc_value += payloadBuffer[bufferPosition +3];
+						// adc_value = *((long*)d);
+
+
+
+						data.add(adc_value);
+					break;
+					//default:
+						// Serial.print("Undefined: ");
+						// Serial.println(msg.DataMap[x]);
+					//break;
+
+				}
+
+
+			}
+
+			//json_out["node"] = "1";
+			//json_out["millis"] = millis();
+			json_out.printTo(Serial);
+			Serial.println();
+			delay(1);
+			MsgSent = true;
+		} else {
+			MsgSent = false;
+		}
+		//delay(10);
 	}	
 }
