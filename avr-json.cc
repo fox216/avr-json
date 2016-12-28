@@ -13,8 +13,9 @@ Change Log
 
 char SerialBuffer[200];
 #define MAX_NETWORK_SIZE 50
+unsigned int loopCount = 0;
 
-typedef struct {
+typedef struct { 
   byte 				NodeID; 		// Address of target sensor 
   byte 				Method; 		// Message method (Example: Get / Set)
   byte				TypeID; 		// Sensor or system data type
@@ -31,6 +32,7 @@ typedef struct {
 	float 			f1;
 	int 			i1;
 	unsigned int 	uI1;
+	unsigned long 	uL2;
 } _SampleSensorData;
 _SampleSensorData sampleData;
 byte decodeBuffer[4]; // max size for int / long 
@@ -47,6 +49,7 @@ void setup() {
 
 void loop() {
 	bool MsgSent = false;
+
 	// Test if serial buffer has input
 	if ( Serial.available() > 0 ) {
 		// Read incomnig byte until a trailing '}' character is detected.
@@ -89,6 +92,7 @@ void loop() {
 	} else {
 		// Send normal output 
 		if ( millis() % SLEEP == 0  && ! MsgSent ) {
+
 			StaticJsonBuffer<200> jsonBuffer;
 
 			JsonObject& json_out = jsonBuffer.createObject();
@@ -97,7 +101,7 @@ void loop() {
 			msg.NodeID = 123;
 			msg.Method = 2;
 			msg.TypeID = 200;
-			msg.DataMap = "bbLfiI"; // Byte, Byte, Unsigned Long, float, integer, Unsigned Integer
+			msg.DataMap = "bbLfiIL"; // Byte, Byte, Unsigned Long, float, integer, Unsigned Integer
 
 			json_out["node"] = msg.NodeID;
 			json_out["meth"] = msg.Method;
@@ -109,7 +113,8 @@ void loop() {
 			sampleData.uL1 = 999999;
 			sampleData.f1 = 175.06;
 			sampleData.i1 = -678;
-			sampleData.uI1 = millis();
+			sampleData.uI1 = loopCount;
+			sampleData.uL2 = millis();
 
 			msg.MsgSize = sizeof(sampleData);
 			Serial.print("Message Size: ");
@@ -125,14 +130,14 @@ void loop() {
 
 			JsonArray& data = json_out.createNestedArray("data");
 			for (int x = 0; x < strlen(msg.DataMap); x++) {
-				Serial.print("DataMap[");
-				Serial.print(x);
-				Serial.print("]: ");
-				Serial.println(msg.DataMap[x]);
+				//Serial.print("DataMap[");
+				// Serial.print(x);
+				// Serial.print("]: ");
+				// Serial.println(msg.DataMap[x]);
 
-				Serial.print("BufferPosition: ");
-				Serial.println(bufferPosition);
-				Serial.println(payloadBuffer[bufferPosition], HEX);
+				// Serial.print("BufferPosition: ");
+				// Serial.println(bufferPosition);
+				// Serial.println(payloadBuffer[bufferPosition], HEX);
 				char thisDataMap = msg.DataMap[x];
 
 				if (thisDataMap == 'b') {
@@ -299,9 +304,11 @@ void loop() {
 			Serial.println();
 			delay(1);
 			MsgSent = true;
+			loopCount += 1;
 		} else {
 			MsgSent = false;
 		}
 		//delay(10);
+
 	}	
 }
